@@ -1,0 +1,233 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+	"handler": "Microsoft.Compute.MultiVm",
+	"version": "0.1.2-preview",
+	"parameters": {
+		"basics": [],
+		"steps": [{
+				"name": "os",
+				"label": "General settings",
+				"subLabel": {
+					"preValidation": "Configure the General settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "General settings",
+				"elements": [
+                    {
+                        "name": "Name",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Virtual Machine name",
+                        "toolTip": "The name of the Virtual Machine.",
+                        "constraints": {
+                          "required": true,
+                          "regex": "^[A-Za-z0-9]{1,15}$",
+                          "validationMessage": "VM name must be alphanumeric and between 1 to 15 characters in length."
+                        }
+                    },
+                    {
+                        "name": "haDeployment",
+                        "type": "Microsoft.Common.OptionsGroup",
+                        "label": "HA Deployment Mode",
+                        "defaultValue": "Disabled",
+                        "toolTip": "Enable or disable High availability deployments.",
+                        "constraints": {
+                          "allowedValues": [
+                            {
+                              "label": "Enabled",
+                              "value": "VWanHA"
+                            },
+                            {
+                              "label": "Disabled",
+                              "value": "VWan"
+                            }
+                          ]
+                        },
+                        "visible": true
+                    },
+                    {
+						"name": "adminUsername",
+						"type": "Microsoft.Compute.UserNameTextBox",
+						"label": "Username",
+						"toolTip": "Admin username for the SDWAN VPX virtual machines.",
+						"osPlatform": "Linux",
+						"constraints": {
+							"required": true,
+							"regex": "^[a-z0-9A-Z]{5,127}$",
+							"validationMessage": "Only alphanumeric characters are allowed, and the value must be 5-127 characters long."
+						},
+						"visible": true
+                    }, 
+                    {
+						"name": "adminPassword",
+						"type": "Microsoft.Common.PasswordBox",
+						"label": {
+							"password": "Password",
+							"confirmPassword": "Confirm password"
+						},
+						"toolTip": "Admin password for the SDWAN VPX virtual machines.",
+						"constraints": {
+							"required": true,
+							"regex": "^((?:(?=.*[a-z])(?=.*[A-Z])(?=.*\\d))|(?:(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&£*_+=[\\]{}|:',?\\/`~\"();!.<>]))|(?:(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&£*_+=[\\]{}|:',?\\/`~\"();!.<>]))|(?:(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&£*_+=[\\]{}|:',?\\/`~\"();!.<>])))([A-Za-z\\d@#$%^&£*\\-_+=[\\]{}|\\\\:',?\\/`~\"();!.<>]{12,72})$",
+							"validationMessage": "Password must be between 12 and 72 characters long and must have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character that is not '\\' or '-'."
+						},
+						"visible": true
+                    }
+				]
+			}, {
+				"name": "net",
+				"label": "SDWAN Settings",
+				"subLabel": {
+					"preValidation": "Configure the SDWAN VPX settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "SDWAN Settings",
+				"elements": [
+                    {
+                        "name": "vmSize",
+                        "type": "Microsoft.Compute.SizeSelector",
+                        "label": "Virtual machine size",
+                        "toolTip": "The size of virtual machine to provision.",
+                        "recommendedSizes": [
+                          "Standard_DS3_v2",
+                          "Standard_DS4_v2",
+                          "Standard_F8",
+                          "Standard_F16"
+                        ],
+                        "constraints": {
+                          "allowedSizes": [
+                            "Standard_DS3_v2",
+                            "Standard_DS4_v2",
+                            "Standard_F8",
+                            "Standard_F16"
+                          ]
+                        },
+                        "osPlatform": "Linux",
+                        "imageReference": {
+                          "publisher": "citrix",
+                          "offer": "netscaler-sd-wan",
+                          "sku": "netscalersd-wanstandardedition"
+                        },
+                        "count": "1"
+                    },
+                    {
+                        "name": "vmSku",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "SD-WAN SKU",
+                        "defaultValue": "netscalersd-wanstandardedition",
+                        "toolTip": "Select appropriate SKU depending upon requirement like BYOL, 100Mbps ...",
+                        "constraints": {
+                          "allowedValues": [
+                            {
+                              "label": "SD-WAN BYOL",
+                              "value": "netscalersd-wanstandardedition"
+                            },
+                            {
+                              "label": "SD-WAN 100Mbps",
+                              "value": "netscalersdwanstandardedition-100mbps"
+                            },
+                            {
+                              "label": "SD-WAN 200Mbps",
+                              "value": "netscalersdwanstandardedition-200mbps"
+                            }
+                          ]
+                        },
+                        "visible": true
+                    },
+                    {
+						"name": "vnet",
+						"type": "Microsoft.Network.VirtualNetworkCombo",
+						"label": {
+							"virtualNetwork": "Virtual network",
+							"subnets": "Subnets"
+						},
+                        "toolTip": {
+                            "virtualNetwork": "Virtual Network Name",
+                            "subnets": "MGMT, LAN, WAN, AUX Subnets requied for deploying Netscaler SD-WAN High availability."
+                        },
+						"defaultValue": {
+							"name": "vnet",
+							"addressPrefixSize": "/16"
+						},
+						"constraints": {
+							"minAddressPrefixSize": "/27"
+						},
+						"options": {
+							"hideExisting": false
+						},
+						"subnets": {
+							"snet01": {
+								"label": "Manangement subnet",
+								"defaultValue": {
+									"name": "snet-mgmt",
+									"addressPrefixSize": "/24"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/29",
+									"minAddressCount": 2,
+									"requireContiguousAddresses": true
+								}
+							},
+							"snet11": {
+								"label": "LAN subnet",
+								"defaultValue": {
+									"name": "snet-lan",
+									"addressPrefixSize": "/24"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/29",
+									"minAddressCount": 2,
+									"requireContiguousAddresses": true
+								}
+							},
+							"snet12": {
+								"label": "WAN subnet",
+								"defaultValue": {
+									"name": "snet-wan",
+									"addressPrefixSize": "/24"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/29",
+									"minAddressCount": 2,
+									"requireContiguousAddresses": true
+								}
+              },
+              "snet13": {
+								"label": "AUX subnet",
+								"defaultValue": {
+									"name": "snet-aux",
+									"addressPrefixSize": "/24"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/29",
+									"minAddressCount": 2,
+									"requireContiguousAddresses": true
+								}
+							}
+						},
+						"visible": true
+					}
+				]
+			}
+		],
+		"outputs": {
+      	"location": "[location()]",
+      	"vmN": "[steps('os').Name]",
+				"adminUsername": "[steps('os').adminUsername]",
+      	"adminPassword": "[steps('os').adminPassword]",
+      	"haMode": "[steps('os').haDeployment]",
+				"vmSize": "[steps('net').vmSize]",
+				"vmSku": "[steps('net').Subscription]",
+				"vnetName": "[steps('net').vnet.name]",
+				"vnetResourceGroup": "[steps('net').vnet.resourceGroup]",
+				"vnetNewOrExisting": "[steps('net').vnet.newOrExisting]",
+				"snetName-01": "[steps('net').vnet.subnets.snet01.name]",
+				"snetAddressPrefix-01": "[steps('net').vnet.subnets.snet01.addressPrefix]",
+				"snetName-11": "[steps('net').vnet.subnets.snet11.name]",
+				"snetAddressPrefix-11": "[steps('net').vnet.subnets.snet11.addressPrefix]",
+				"snetName-12": "[steps('net').vnet.subnets.snet12.name]",
+      	"snetAddressPrefix-12": "[steps('net').vnet.subnets.snet12.addressPrefix]",
+      	"snetName-13": "[steps('net').vnet.subnets.snet13.name]",
+				"snetAddressPrefix-13": "[steps('net').vnet.subnets.snet13.addressPrefix]"
+		}
+	}
+}

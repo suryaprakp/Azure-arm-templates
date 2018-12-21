@@ -1,0 +1,50 @@
+{
+  "location": {
+    "value": "northeurope"
+  },
+  "vmN": {
+    "value": "sdwan"
+  },
+  "adminUsername": {
+    "value": "suryaprakp"
+  },
+  "adminPassword": {
+    "value": "Freebsd123!@#"
+  },
+  "vmSize": {
+    "value": "Standard_D3_v2"
+  },
+  "vnetName": {
+    "value": "vnet"
+  },
+  "vnetResourceGroup": {
+    "value": "wanopt-testing"
+  },
+  "vnetNewOrExisting": {
+    "value": "new"
+  },
+  "snetName-01": {
+    "value": "snet-mgmt"
+  },
+  "snetAddressPrefix-01": {
+    "value": "10.1.0.0/24"
+  },
+  "snetName-11": {
+    "value": "snet-lan"
+  },
+  "snetAddressPrefix-11": {
+    "value": "10.1.1.0/24"
+  },
+  "snetName-12": {
+    "value": "snet-wan"
+  },
+  "snetAddressPrefix-12": {
+    "value": "10.1.2.0/24"
+  },
+  "snetName-13": {
+    "value": "snet-aux"
+  },
+  "snetAddressPrefix-13": {
+    "value": "10.1.3.0/24"
+  }
+}

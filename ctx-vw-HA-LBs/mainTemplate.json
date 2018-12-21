@@ -1,0 +1,1095 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"location": {
+			"type": "string"
+		},
+		"vmN": {
+			"type": "string",
+			"defaultValue": "sdwan-vpx",
+			"metadata": {
+			  "description": "Name for the Virtual Machine."
+			}
+		},
+		"haMode": {
+			"type": "string",
+			"defaultValue": "VWan",
+			"metadata": {
+			  "description": "Deployment mode for HA."
+			}
+		},
+		"adminUsername": {
+			"type": "string",
+			"metadata": {
+				"description": "Username for the Virtual Machines."
+			}
+		},
+		"adminPassword": {
+			"type": "securestring",
+			"metadata": {
+				"description": "Password for the Virtual Machines."
+			}
+		},
+		"vmSize": {
+			"defaultValue": "Standard_DS3_v2",
+			"type": "string",
+			"allowedValues": [
+				"Standard_DS3_v2",
+				"Standard_DS4_v2",
+				"Standard_F8",
+                "Standard_F16"
+
+			],
+			"metadata": {
+				"description": "Size of Azure Virtual Machine."
+			}
+		},
+		"vmSku": {
+			"defaultValue": "netscalersd-wanstandardedition",
+			"type": "string",
+			"metadata": {
+				"description": "SKU of SDWAN Image."
+			}
+		},
+		"vnetName": {
+			"defaultValue": "vnet01",
+			"type": "string",
+			"metadata": {
+				"description": "Name of Virtual Network"
+			}
+		},
+		"vnetResourceGroup": {
+			"defaultValue": "[resourceGroup().name]",
+			"type": "string",
+			"metadata": {
+				"description": "Resource Group name of existing Virtual Network. Leave empty if Resource Group is same as current deployment."
+			}
+		},
+		"vnetNewOrExisting": {
+			"defaultValue": "new",
+			"allowedValues": [
+				"new",
+				"existing"
+			],
+			"type": "string"
+		},
+		"snetName-01": {
+			"defaultValue": "subnet_mgmt",
+			"type": "string",
+			"metadata": {
+				"description": "Name of Management Subnet. Enter existing subnet name if opting for existing Virtual Network"
+			}
+		},
+		"snetName-11": {
+			"defaultValue": "subnet_lan",
+			"type": "string",
+			"metadata": {
+				"description": "Name of LAN Side subnet. Enter existing subnet name if opting for existing Virtual Network"
+			}
+		},
+		"snetName-12": {
+			"defaultValue": "subnet_wan",
+			"type": "string",
+			"metadata": {
+				"description": "Name of WAN Side subnet. Enter existing subnet name if opting for existing Virtual Network"
+			}
+        },
+        "snetName-13": {
+			"defaultValue": "subnet_aux",
+			"type": "string",
+			"metadata": {
+				"description": "Name of AUX subnet. Enter existing subnet name if opting for existing Virtual Network"
+			}
+		},
+		"snetAddressPrefix-01": {
+			"defaultValue": "10.11.0.0/24",
+			"type": "string",
+			"metadata": {
+				"description": "Value of Management subnet in CIDR form. Ignore this field if opting for existing Virtual Network, Address prefix will be picked from existing Subnet."
+			}
+		},
+		"snetAddressPrefix-11": {
+			"defaultValue": "10.11.1.0/24",
+			"type": "string",
+			"metadata": {
+				"description": "Value of LAN side subnet in CIDR form. Ignore this field if opting for existing Virtual Network, Address prefix will be picked from existing Subnet."
+			}
+		},
+		"snetAddressPrefix-12": {
+			"defaultValue": "10.11.2.0/24",
+			"type": "string",
+			"metadata": {
+				"description": "Value of WAN Side subnet in CIDR form. Ignore this field if opting for existing Virtual Network, Address prefix will be picked from existing Subnet."
+			}
+        },
+        "snetAddressPrefix-13": {
+			"defaultValue": "10.11.3.0/24",
+			"type": "string",
+			"metadata": {
+				"description": "Value of AUX subnet in CIDR form. Ignore this field if opting for existing Virtual Network, Address prefix will be picked from existing Subnet."
+			}
+		}
+	},
+	"variables": {
+		"nicN": "sdwan-vpx-nic",
+		"nsgN": "sdwan-vpx-nic-nsg",
+        "lbN": "sdwanha-external",
+        "lbN1": "sdwanha-internal",
+		"bePoolN": "sdwan-ext-backendpool",
+		"probeN": "sdwan-ext-tcprobe",
+        "ipConfN": "sdwan-ext-frontendip",
+        "bePoolN1": "sdwan-int-backendpool",
+		"probeN1": "sdwan-int-tcprobe",
+		"ipConfN1": "sdwan-int-frontendip",
+		"avsN": "sdwan-avlset",
+        "alb-pipN": "sdwan-extlb-publicip",
+		"mgmt-pipN-suffix": "-mgmt-publicip",
+		"wanlink-pipN-suffix": "-wanlink-publicip",
+		"saN": "[concat('vpxha', uniqueString(resourceGroup().id))]",
+		"snetRef-01": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('snetName-01'))]",
+		"snetRef-11": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('snetName-11'))]",
+        "snetRef-12": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('snetName-12'))]",
+        "snetRef-13": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('snetName-13'))]",
+		"bePoolId": "[resourceId( 'Microsoft.Network/loadBalancers/backendAddressPools', variables('lbN'), variables('bePoolN'))]",
+		"probeId": "[resourceId( 'Microsoft.Network/loadBalancers/probes', variables('lbN'), variables('probeN'))]",
+        "ipConfId": "[resourceId( 'Microsoft.Network/loadBalancers/frontendIpConfigurations', variables('lbN'), variables('ipConfN'))]",
+        "bePoolId1": "[resourceId( 'Microsoft.Network/loadBalancers/backendAddressPools', variables('lbN1'), variables('bePoolN1'))]",
+		"probeId1": "[resourceId( 'Microsoft.Network/loadBalancers/probes', variables('lbN1'), variables('probeN1'))]",
+		"ipConfId1": "[resourceId( 'Microsoft.Network/loadBalancers/frontendIpConfigurations', variables('lbN1'), variables('ipConfN1'))]"
+	},
+	"resources": [
+		{ 
+			 "apiVersion": "2018-02-01",
+			 "name": "pid-3407d6d6-0461-5206-9470-af98f521a448",
+			 "type": "Microsoft.Resources/deployments",
+			 "properties": {
+				"mode": "Incremental",
+				"template": {
+					"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+					"contentVersion": "1.0.0.0",
+					"resources": []
+				}
+			}
+		},
+		{
+			"type": "Microsoft.Network/loadBalancers",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[variables('lbN')]",
+			"apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+			"properties": {
+				"frontendIPConfigurations": [{
+						"name": "[variables('ipConfN')]",
+						"properties": {
+							"publicIPAddress": {
+								"id": "[resourceId( 'Microsoft.Network/publicIpAddresses', variables('alb-pipN'))]"
+							}
+						}
+					}
+				],
+				"backendAddressPools": [{
+						"name": "[variables('bePoolN')]"
+					}
+				],
+				"probes": [{
+						"name": "[variables('probeN')]",
+						"properties": {
+							"protocol": "Tcp",
+							"port": 500,
+							"intervalInSeconds": 5,
+							"numberOfProbes": 2
+						}
+					}
+				],
+				"loadBalancingRules": [{
+						"name": "lbRule1",
+						"properties": {
+							"frontendIPConfiguration": {
+								"id": "[variables('ipConfId')]"
+							},
+							"frontendPort": 4980,
+							"backendPort": 4980,
+							"enableFloatingIP": true,
+							"idleTimeoutInMinutes": 4,
+							"protocol": "Udp",
+							"loadDistribution": "Default",
+							"backendAddressPool": {
+								"id": "[variables('bePoolId')]"
+							},
+							"probe": {
+								"id": "[variables('probeId')]"
+							}
+						}
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat('Microsoft.Network/publicIpAddresses/', variables('alb-pipN'))]"
+			]
+		},
+		{
+			"type": "Microsoft.Network/loadBalancers",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[variables('lbN1')]",
+			"apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+			"properties": {
+				"frontendIPConfigurations": [{
+						"name": "[variables('ipConfN1')]",
+						"properties": {
+                            "privateIPAllocationMethod":"Dynamic",
+                            "subnet": {
+                                "id": "[variables('snetRef-11')]"
+                              }
+						}
+					}
+				],
+				"backendAddressPools": [{
+						"name": "[variables('bePoolN1')]"
+					}
+				],
+				"probes": [{
+						"name": "[variables('probeN1')]",
+						"properties": {
+							"protocol": "Tcp",
+							"port": 500,
+							"intervalInSeconds": 5,
+							"numberOfProbes": 2
+						}
+					}
+				],
+				"loadBalancingRules": [{
+						"name": "lbRule1",
+						"properties": {
+							"frontendIPConfiguration": {
+								"id": "[variables('ipConfId1')]"
+							},
+							"frontendPort": 0,
+							"backendPort": 0,
+							"enableFloatingIP": false,
+							"idleTimeoutInMinutes": 4,
+							"protocol": "All",
+							"loadDistribution": "Default",
+							"backendAddressPool": {
+								"id": "[variables('bePoolId1')]"
+							},
+							"probe": {
+								"id": "[variables('probeId1')]"
+							}
+						}
+					}
+				]
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+            ]
+		},
+		{
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nicN'), copyIndex(), '-mgmt')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "niccopy-01",
+				"count": 2
+			},
+			"properties": {
+				"ipConfigurations": [{
+						"name": "ipconfig1",
+						"properties": {
+							"subnet": {
+								"id": "[variables('snetRef-01')]"
+							},
+							"privateIPAllocationMethod": "Dynamic",
+							"publicIpAddress": {
+								"id": "[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('vmN'), copyIndex(), variables('mgmt-pipN-suffix')))]"
+							}
+						}
+					}
+				],
+				"networkSecurityGroup": {
+					"id": "[resourceId( 'Microsoft.Network/networkSecurityGroups', concat(variables('nsgN'), copyIndex(), '-mgmt'))]"
+				}
+			},
+			"dependsOn": [
+				"[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+				"[concat('Microsoft.Network/publicIpAddresses/', parameters('vmN'), copyIndex(), variables('mgmt-pipN-suffix'))]",
+				"[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgN'), copyIndex(), '-mgmt')]"
+			]
+		}, 
+		{
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nicN'), copyIndex(), '-lan')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "niccopy-11",
+				"count": 2
+			},
+			"properties": {
+				"ipConfigurations": [{
+						"name": "ipconfig1",
+						"properties": {
+							"subnet": {
+								"id": "[variables('snetRef-11')]"
+							},
+							"privateIPAllocationMethod": "Dynamic",
+							"loadBalancerBackendAddressPools": [{
+									"id": "[variables('bePoolId1')]"
+								}
+							]
+						}
+					}
+                ],
+                "enableIPForwarding": true,
+				"networkSecurityGroup": {
+					"id": "[resourceId( 'Microsoft.Network/networkSecurityGroups', concat(variables('nsgN'), copyIndex(), '-lan'))]"
+				}
+			},
+			"dependsOn": [
+				"[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+				"[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgN'), copyIndex(), '-lan')]",
+				"[concat('Microsoft.Network/loadBalancers/', variables('lbN1'))]"
+			]
+		}, 
+		{
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nicN'), copyIndex(), '-wan')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "niccopy-12",
+				"count": 2
+			},
+			"properties": {
+				"ipConfigurations": [{
+						"name": "ipconfig1",
+						"properties": {
+							"subnet": {
+								"id": "[variables('snetRef-12')]"
+							},
+                            "privateIPAllocationMethod": "Dynamic",
+                            "loadBalancerBackendAddressPools": [{
+                                "id": "[variables('bePoolId')]"
+                            }
+                        ]
+						}
+					}
+				],
+				"networkSecurityGroup": {
+					"id": "[resourceId( 'Microsoft.Network/networkSecurityGroups', concat(variables('nsgN'), copyIndex(), '-wan'))]"
+				}
+			},
+			"dependsOn": [
+				"[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgN'), copyIndex(), '-wan')]",
+                "[concat('Microsoft.Network/loadBalancers/', variables('lbN'))]"
+			]
+		},
+		{
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nicN'), copyIndex(), '-aux')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "niccopy-13",
+				"count": 2
+			},
+			"properties": {
+				"ipConfigurations": [{
+						"name": "ipconfig1",
+						"properties": {
+							"subnet": {
+								"id": "[variables('snetRef-13')]"
+							},
+                            "privateIPAllocationMethod": "Dynamic"
+						}
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+			]
+		},
+		{
+			"type": "Microsoft.Network/publicIPAddresses",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+            "sku": {
+                "name": "Standard"
+            },
+			"name": "[variables('alb-pipN')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"properties": {
+				"publicIpAllocationMethod": "Static"
+			}
+		}, 
+		{
+			"type": "Microsoft.Network/virtualNetworks",
+			"condition": "[equals(parameters('vnetNewOrExisting'),'new')]",
+			"name": "[parameters('vnetName')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"properties": {
+				"addressSpace": {
+					"addressPrefixes": [
+						"[parameters('snetAddressPrefix-01')]",
+						"[parameters('snetAddressPrefix-11')]",
+                        "[parameters('snetAddressPrefix-12')]",
+                        "[parameters('snetAddressPrefix-13')]"
+					]
+				},
+				"subnets": [{
+						"name": "[parameters('snetName-01')]",
+						"properties": {     
+							"addressPrefix": "[parameters('snetAddressPrefix-01')]"
+						}
+					}, {
+						"name": "[parameters('snetName-11')]",
+						"properties": {
+							"addressPrefix": "[parameters('snetAddressPrefix-11')]"
+						}
+					}, {
+						"name": "[parameters('snetName-12')]",
+						"properties": {
+							"addressPrefix": "[parameters('snetAddressPrefix-12')]"
+						}
+                    },
+                    {
+						"name": "[parameters('snetName-13')]",
+						"properties": {
+							"addressPrefix": "[parameters('snetAddressPrefix-13')]"
+						}
+					}
+				]
+			}
+		},
+		{
+			"type": "Microsoft.Compute/virtualMachines",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(parameters('vmN'), copyIndex())]",
+			"apiVersion": "2017-12-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "vmcopy",
+				"count": 2
+			},
+			"plan": {
+				"name": "[parameters('vmSku')]",
+				"publisher": "citrix",
+				"product": "netscaler-sd-wan"
+			},
+			"properties": {
+				"osProfile": {
+					"computerName": "[concat(parameters('vmN'), copyIndex())]",
+					"adminUsername": "[parameters('adminUsername')]",
+					"adminPassword": "[parameters('adminPassword')]"
+				},
+				"hardwareProfile": {
+					"vmSize": "[parameters('vmSize')]"
+				},
+				"storageProfile": {
+                    "imageReference": {
+                        "publisher": "citrix",
+                        "offer": "netscaler-sd-wan",
+                        "sku": "[parameters('vmSku')]",
+                        "version": "10.2.0"
+                    },
+					"osDisk": {
+						"createOption": "FromImage",
+						"managedDisk": {
+							"storageAccountType": "Standard_LRS"
+						}
+					},
+					"dataDisks": []
+				},
+				"networkProfile": {
+					"networkInterfaces": [{
+							"id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), copyIndex(), '-mgmt'))]",
+							"properties": {
+								"primary": true
+							}
+						}, {
+							"id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), copyIndex(), '-lan'))]",
+							"properties": {
+								"primary": false
+							}
+						}, {
+							"id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), copyIndex(), '-wan'))]",
+							"properties": {
+								"primary": false
+							}
+                        },
+                        {
+							"id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), copyIndex(), '-aux'))]",
+							"properties": {
+								"primary": false
+							}
+						}
+					]
+				},
+				"availabilitySet": {
+					"id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avsN'))]"
+				},
+				"diagnosticsProfile": {
+					"bootDiagnostics": {
+						"enabled": true,
+						"storageUri": "[reference(resourceId( 'Microsoft.Storage/storageAccounts', variables('saN')), '2017-10-01').primaryEndpoints['blob']]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), copyIndex(), '-mgmt')]",
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), sub(1,copyIndex()), '-mgmt')]",
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), copyIndex(), '-lan')]",
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), sub(1,copyIndex()), '-lan')]",
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), copyIndex(), '-wan')]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), sub(1,copyIndex()), '-wan')]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), copyIndex(), '-aux')]",
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), sub(1,copyIndex()), '-aux')]",
+				"[concat('Microsoft.Compute/availabilitySets/', variables('avsN'))]",
+				"[concat('Microsoft.Storage/storageAccounts/', variables('saN'))]"
+			]
+		},
+		{
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+            "name": "[concat(variables('nicN'), '-mgmt')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('snetRef-01')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('vmN'), variables('mgmt-pipN-suffix')))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId( 'Microsoft.Network/networkSecurityGroups', concat(variables('nsgN') , '-mgmt'))]"
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('vmN'), variables('mgmt-pipN-suffix'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgN'), '-mgmt')]"
+            ]
+        },
+        {
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+            "name": "[concat(variables('nicN'), '-lan')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('snetRef-11')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    }
+                ],
+                "enableIPForwarding": true,
+                "networkSecurityGroup": {
+                    "id": "[resourceId( 'Microsoft.Network/networkSecurityGroups', concat(variables('nsgN'), '-lan'))]"
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgN'), '-lan')]"
+            ]
+        },
+        {
+			"type": "Microsoft.Network/networkInterfaces",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+            "name": "[concat(variables('nicN'), '-wan')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('snetRef-12')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('vmN'), variables('wanlink-pipN-suffix')))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId( 'Microsoft.Network/networkSecurityGroups', concat(variables('nsgN'), '-wan'))]"
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('vmN'), variables('wanlink-pipN-suffix'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgN'), '-wan')]"
+            ]
+		},
+		{
+			"type": "Microsoft.Compute/virtualMachines",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+            "name": "[parameters('vmN')]",
+            "apiVersion": "2017-12-01",
+            "location": "[parameters('location')]",
+            "plan": {
+                "name": "[parameters('vmSku')]",
+                "publisher": "citrix",
+                "product": "netscaler-sd-wan"
+            },
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('vmN')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "citrix",
+                        "offer": "netscaler-sd-wan",
+                        "sku": "[parameters('vmSku')]",
+                        "version": "10.2.0"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                        }
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), '-mgmt'))]",
+                            "properties": {
+                                "primary": true
+                            }
+                        },
+                        {
+                            "id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), '-lan'))]",
+                            "properties": {
+                                "primary": false
+                            }
+                        },
+                        {
+                            "id": "[resourceId( 'Microsoft.Network/networkInterfaces', concat(variables('nicN'), '-wan'))]",
+                            "properties": {
+                                "primary": false
+                            }
+                        }
+                    ]
+                },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avsN'))]"
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[reference(resourceId( 'Microsoft.Storage/storageAccounts', variables('saN')), '2017-10-01').primaryEndpoints['blob']]"
+                    }
+                }
+            },
+            "dependsOn": [
+				"[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), '-mgmt')]",
+			    "[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), '-lan')]",
+			    "[concat('Microsoft.Network/networkInterfaces/', variables('nicN'), '-wan')]",
+			    "[concat('Microsoft.Compute/availabilitySets/', variables('avsN'))]",
+			    "[concat('Microsoft.Storage/storageAccounts/', variables('saN'))]"			
+			]
+        },
+		{
+			"type": "Microsoft.Compute/availabilitySets",
+			"name": "[variables('avsN')]",
+			"apiVersion": "2017-12-01",
+			"sku": {
+				"name": "Aligned"
+			},
+			"location": "[parameters('location')]",
+			"properties": {
+				"platformFaultDomainCount": 2,
+				"platformUpdateDomainCount": 2
+			}
+		}, 
+		{
+			"type": "Microsoft.Storage/storageAccounts",
+			"name": "[variables('saN')]",
+			"apiVersion": "2017-10-01",
+			"kind": "Storage",
+			"location": "[parameters('location')]",
+			"sku": {
+				"name": "Standard_LRS"
+			},
+			"properties": {}
+		},
+		{
+			"type": "Microsoft.Network/publicIPAddresses",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+            "sku": {
+                "name": "Standard"
+            },
+			"name": "[concat(parameters('vmN'), copyIndex(), variables('mgmt-pipN-suffix'))]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "ipcopy",
+				"mode": "Serial",
+				"count": 2
+			},
+			"properties": {
+				"publicIpAllocationMethod": "Static"
+			}
+		},
+		{
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[equals(parameters('haMode'), 'VWan')]",
+            "sku": {
+                "name": "Basic"
+            },
+            "name": "[concat(parameters('vmN'), variables('mgmt-pipN-suffix'))]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "Static"
+            }
+		},
+		{
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[equals(parameters('haMode'), 'VWan')]",
+            "sku": {
+                "name": "Basic"
+            },
+            "name": "[concat(parameters('vmN'), variables('wanlink-pipN-suffix'))]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "Static"
+            }
+		},
+		{
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nsgN'), copyIndex(), '-mgmt')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "nsgcopy-01",
+				"count": 2
+			},
+			"properties": {
+				"securityRules": [{
+					"name": "ssh-rule",
+					"properties": {
+						"description": "Allow remote SSH",
+						"priority": 1000,
+						"protocol": "Tcp",
+						"access": "Allow",
+						"direction": "Inbound",
+						"sourceAddressPrefix": "Internet",
+						"sourcePortRange": "*",
+						"destinationAddressPrefix": "*",
+						"destinationPortRange": "22"
+					}
+				},
+				{
+					"name": "web-rule",
+					"properties": {
+						"description": "Allow WEB",
+						"priority": 1001,
+						"protocol": "Tcp",
+						"access": "Allow",
+						"direction": "Inbound",
+						"sourceAddressPrefix": "Internet",
+						"sourcePortRange": "*",
+						"destinationAddressPrefix": "*",
+						"destinationPortRange": "80"
+					}
+				},
+				{
+					"name": "secure-web-rule",
+					"properties": {
+						"description": "Allow Secure WEB",
+						"priority": 1002,
+						"protocol": "Tcp",
+						"access": "Allow",
+						"direction": "Inbound",
+						"sourceAddressPrefix": "Internet",
+						"sourcePortRange": "*",
+						"destinationAddressPrefix": "*",
+						"destinationPortRange": "443"
+					}
+				}]
+			}
+		}, {
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nsgN'), copyIndex(), '-lan')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "nsgcopy-11",
+				"count": 2
+			},
+			"properties": {
+				"securityRules": [
+                    {
+						"name": "ssh-rule",
+						"properties": {
+							"description": "Allow remote SSH",
+							"priority": 1000,
+							"protocol": "Tcp",
+							"access": "Allow",
+							"direction": "Inbound",
+							"sourceAddressPrefix": "Internet",
+							"sourcePortRange": "*",
+							"destinationAddressPrefix": "*",
+							"destinationPortRange": "22"
+						}
+					},
+					{
+						"name": "web-rule",
+						"properties": {
+							"description": "Allow WEB",
+							"priority": 1001,
+							"protocol": "Tcp",
+							"access": "Allow",
+							"direction": "Inbound",
+							"sourceAddressPrefix": "Internet",
+							"sourcePortRange": "*",
+							"destinationAddressPrefix": "*",
+							"destinationPortRange": "80"
+						}
+					},
+					{
+						"name": "secure-web-rule",
+						"properties": {
+							"description": "Allow Secure WEB",
+							"priority": 1002,
+							"protocol": "Tcp",
+							"access": "Allow",
+							"direction": "Inbound",
+							"sourceAddressPrefix": "Internet",
+							"sourcePortRange": "*",
+							"destinationAddressPrefix": "*",
+							"destinationPortRange": "443"
+						}
+					}
+				]
+			}
+		}, {
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"condition": "[equals(parameters('haMode'), 'VWanHA')]",
+			"name": "[concat(variables('nsgN'), copyIndex(), '-wan')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"copy": {
+				"name": "nsgcopy-12",
+				"count": 2
+			},
+			"properties": {
+				"securityRules": [
+                    {   
+                        "name": "UDP-Rule1",
+                        "properties": {
+                            "description": "Allow UDP",
+                            "protocol": "Udp",
+                            "sourcePortRange": "4980",
+                            "destinationPortRange": "4980",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 101,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "UDP-Rule2",
+                        "properties": {
+                            "description": "Allow UDP",
+                            "protocol": "Udp",
+                            "sourcePortRange": "4980",
+                            "destinationPortRange": "4980",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                             "access": "Allow",
+                            "priority": 102,
+                            "direction": "Outbound"
+                        }
+                    }
+				]
+			}
+		},
+		{
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+			"name": "[concat(variables('nsgN'), '-mgmt')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"properties": {
+				"securityRules": [{
+					"name": "ssh-rule",
+					"properties": {
+						"description": "Allow remote SSH",
+						"priority": 1000,
+						"protocol": "Tcp",
+						"access": "Allow",
+						"direction": "Inbound",
+						"sourceAddressPrefix": "Internet",
+						"sourcePortRange": "*",
+						"destinationAddressPrefix": "*",
+						"destinationPortRange": "22"
+					}
+				},
+				{
+					"name": "web-rule",
+					"properties": {
+						"description": "Allow WEB",
+						"priority": 1001,
+						"protocol": "Tcp",
+						"access": "Allow",
+						"direction": "Inbound",
+						"sourceAddressPrefix": "Internet",
+						"sourcePortRange": "*",
+						"destinationAddressPrefix": "*",
+						"destinationPortRange": "80"
+					}
+				},
+				{
+					"name": "secure-web-rule",
+					"properties": {
+						"description": "Allow Secure WEB",
+						"priority": 1002,
+						"protocol": "Tcp",
+						"access": "Allow",
+						"direction": "Inbound",
+						"sourceAddressPrefix": "Internet",
+						"sourcePortRange": "*",
+						"destinationAddressPrefix": "*",
+						"destinationPortRange": "443"
+					}
+				}]
+			}
+		},
+		{
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+			"name": "[concat(variables('nsgN'), '-lan')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"properties": {
+				"securityRules": [
+                    {
+                        "name": "ssh-rule",
+                        "properties": {
+                            "description": "Allow remote SSH",
+                            "priority": 1000,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "Internet",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22"
+                        }
+                    },
+                    {
+                        "name": "web-rule",
+                        "properties": {
+                            "description": "Allow WEB",
+                            "priority": 1001,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "Internet",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80"
+                        }
+                    },
+                    {
+                        "name": "secure-web-rule",
+                        "properties": {
+                            "description": "Allow Secure WEB",
+                            "priority": 1002,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "Internet",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "443"
+                        }
+                    }
+				]
+			}
+		},
+		{
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"condition": "[equals(parameters('haMode'), 'VWan')]",
+			"name": "[concat(variables('nsgN'),'-wan')]",
+			"apiVersion": "2017-10-01",
+			"location": "[parameters('location')]",
+			"properties": {
+				"securityRules": [
+                    {   
+                        "name": "UDP-Rule1",
+                        "properties": {
+                            "description": "Allow UDP",
+                            "protocol": "Udp",
+                            "sourcePortRange": "4980",
+                            "destinationPortRange": "4980",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 101,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "UDP-Rule2",
+                        "properties": {
+                            "description": "Allow UDP",
+                            "protocol": "Udp",
+                            "sourcePortRange": "4980",
+                            "destinationPortRange": "4980",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                             "access": "Allow",
+                            "priority": 102,
+                            "direction": "Outbound"
+                        }
+                    }
+				]
+			}
+		}
+	]
+}
