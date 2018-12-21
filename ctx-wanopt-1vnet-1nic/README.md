@@ -5,4 +5,5 @@ In case of Standalone mode, This template creates:
 - UI associated with Azure portal ( createUidefinition )
 - VM with managed disk
 - one-arm deployment in VNET
+- IP Forwarding enabled to intercept packets not destined to adapter
 - Security groups associated with adapters depending on the traffic patterns
