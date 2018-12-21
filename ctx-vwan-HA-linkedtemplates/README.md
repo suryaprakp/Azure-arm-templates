@@ -1,6 +1,6 @@
 This template is a conditional template which deploys Citrix SD-WAN virtual machines in highly available/ Stand alone mode.This template deploys following things
 
-# Linked Templates! ( For modularity, if you feel your code is unreadable )
+# Linked Templates ( For modularity, if you feel your code is un-readable )
 
 In case of HA mode, This template creates:
 - 2 SD-WAN vm's with 4 subnets for management,LAN,WAN,AUX
