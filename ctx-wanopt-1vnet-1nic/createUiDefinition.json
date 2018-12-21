@@ -1,0 +1,179 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+	"handler": "Microsoft.Compute.MultiVm",
+	"version": "0.1.2-preview",
+	"parameters": {
+		"basics": [
+		],
+		"steps": [{
+				"name": "general",
+				"label": "General Settings",
+				"subLabel": {
+					"preValidation": "Configure Virtual Machine settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "General Settings",
+				"elements": [{
+						"name": "virtualMachineName",
+						"type": "Microsoft.Common.TextBox",
+						"label": "Name of the  VPX Virtual machine",
+						"defaultValue": "sdwanopt-vpx",
+						"toolTip": "Name of the Citrix SD-WAN WANopt VPX virtual machine must be unique.",
+						"constraints": {
+							"required": true,
+							"regex": "^[-a-z0-9A-Z]{3,50}$",
+							"validationMessage": "Only alphanumeric and hyphen characters are allowed, and the value must be 3-50 characters long."
+						}
+					}, {
+						"name": "adminUsername",
+						"type": "Microsoft.Compute.UserNameTextBox",
+						"label": "User name",
+						"toolTip": "Admin username for the Citrix SD-WAN WANopt VPX virtual machine.",
+						"osPlatform": "Linux",
+						"constraints": {
+							"required": true,
+							"regex": "^[a-z0-9A-Z]{5,127}$",
+							"validationMessage": "Only alphanumeric characters are allowed, and the value must be 5-127 characters long."
+						},
+						"visible": true
+					}, {
+						"name": "adminPassword",
+						"type": "Microsoft.Common.PasswordBox",
+						"label": {
+							"password": "Password",
+							"confirmPassword": "Confirm password"
+						},
+						"toolTip": "Admin password for the Citrix SD-WAN WANopt VPX virtual machine.",
+						"constraints": {
+							"required": true,
+							"regex": "^((?:(?=.*[a-z])(?=.*[A-Z])(?=.*\\d))|(?:(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&£*_+=[\\]{}|:',?\\/`~\"();!.<>]))|(?:(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&£*_+=[\\]{}|:',?\\/`~\"();!.<>]))|(?:(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&£*_+=[\\]{}|:',?\\/`~\"();!.<>])))([A-Za-z\\d@#$%^&£*\\-_+=[\\]{}|\\\\:',?\\/`~\"();!.<>]{12,72})$",
+							"validationMessage": "Password must be between 12 and 72 characters long and must have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character that is not '\\' or '-'."
+						},
+						"visible": true
+					}, {
+						"name": "virtualMachineSize",
+						"type": "Microsoft.Compute.SizeSelector",
+						"label": "Virtual machine size",
+						"defaultValue": "Standard_D3_v2",
+						"toolTip": "The size of the VPX virtual machine. 'Standard_D3_v2' Size is sufficient and best suited for VPX.",
+						"osPlatform": "Linux",
+						"recommendedSizes": [
+							"Standard_D3_v2",
+							"Standard_D4_v2",
+							"Standard_D2s_v3",
+							"Standard_D4s_v3"
+						],
+						"constraints": {
+							"allowedSizes": [
+								"Standard_D3_v2",
+								"Standard_D4_v2",
+								"Standard_D2s_v3",
+								"Standard_D4s_v3"
+							]
+						},
+						"count": 1,
+						"imageReference": {
+							"publisher": "citrix",
+							"offer": "citrix-sd-wan-opt",
+							"sku": "citrixsd-wanopt"
+						}
+					}
+				]
+			}, {
+				"name": "advanced",
+				"label": "Advanced Settings",
+				"subLabel": {
+					"preValidation": "Configure the Network and Storage Account settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "Advanced Settings",
+				"elements": [{
+						"name": "networkSection",
+						"type": "Microsoft.Common.Section",
+						"label": "Network Settings",
+						"elements": [{
+								"name": "vnet",
+								"type": "Microsoft.Network.VirtualNetworkCombo",
+								"label": {
+									"virtualNetwork": "Virtual network",
+									"subnets": "Subnet"
+								},
+								"toolTip": {
+									"virtualNetwork": "",
+									"subnets": ""
+								},
+								"defaultValue": {
+									"name": "vnet",
+									"addressPrefixSize": "/16"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/27"
+								},
+								"options": {
+									"hideExisting": false
+								},
+								"subnets": {
+									"snet": {
+										"label": "Subnet",
+										"defaultValue": {
+											"name": "snet01",
+											"addressPrefixSize": "/24"
+										},
+										"constraints": {
+											"minAddressPrefixSize": "/29",
+											"minAddressCount": 1,
+											"requireContiguousAddresses": true
+										}
+									}
+								},
+								"visible": true
+							}
+						],
+						"visible": true
+					}, {
+						"name": "storageAccountSection",
+						"type": "Microsoft.Common.Section",
+						"label": "Storage Account Settings",
+						"elements": [{
+								"name": "storageAccount",
+								"type": "Microsoft.Storage.StorageAccountSelector",
+								"label": "Storage account",
+								"defaultValue": {
+									"name": "[concat('vpxstorageaccount', string(rand(0, 999999)))]",
+									"type": "Standard_LRS"
+								},
+								"options": {
+									"hideExisting": true
+								},
+								"constraints": {
+									"allowedTypes": [
+										"Standard_LRS",
+										"Standard_GRS"
+									]
+								},
+								"visible": true
+							}
+						],
+						"visible": true
+					}
+				]
+			}
+		],
+		"outputs": {
+			"location": "[location()]",
+			"virtualMachineName": "[steps('general').virtualMachineName]",
+			"adminUsername": "[steps('general').adminUsername]",
+			"adminPassword": "[steps('general').adminPassword]",
+			"virtualMachineSize": "[steps('general').virtualMachineSize]",
+			"virtualNetworkName": "[steps('advanced').networkSection.vnet.name]",
+			"vnetResourceGroup": "[steps('advanced').networkSection.vnet.resourceGroup]",
+			"vnetNewOrExisting": "[steps('advanced').networkSection.vnet.newOrExisting]",
+			"networkInterfaceName": "[concat(steps('general').virtualMachineName, '-nic1')]",
+			"networkSecurityGroupName": "[concat(steps('general').virtualMachineName, '-nic1', '-nsg')]",
+			"diagnosticsStorageAccountName": "[steps('advanced').storageAccountSection.storageAccount.name]",
+			"addressPrefix": "[first(steps('advanced').networkSection.vnet.addressPrefixes)]",
+			"subnetName": "[steps('advanced').networkSection.vnet.subnets.snet.name]",
+			"subnetPrefix": "[steps('advanced').networkSection.vnet.subnets.snet.addressPrefix]"
+		}
+	}
+}

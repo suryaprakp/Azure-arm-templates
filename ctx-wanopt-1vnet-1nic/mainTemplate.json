@@ -1,0 +1,308 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "10.1.2",
+    "parameters": {
+        "location": {
+            "type": "string"
+        },
+        "virtualMachineName": {
+            "defaultValue": "SDWAN-WO-VPX",
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Virtual Machine."
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Admin user name for the Virtual Machine."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Admin password for the Virtual Machine."
+            }
+        },
+        "virtualMachineSize": {
+            "allowedValues": [
+                "Standard_D3_v2"
+            ],
+            "type": "string",
+            "metadata": {
+                "description": "Size of Azure Virtual Machine."
+            }
+        },
+        "virtualNetworkName": {
+            "defaultValue": "vnet01",
+            "type": "string",
+            "metadata": {
+                "description": "Name of Virtual Network"
+            }
+        },
+        "vnetResourceGroup": {
+            "defaultValue": "[resourceGroup().name]",
+            "type": "string",
+            "metadata": {
+                "description": "Resource Group name of existing Virtual Network. Leave empty if Resource Group is same as current deployment."
+            }
+        },
+        "vnetNewOrExisting": {
+            "defaultValue": "new",
+            "allowedValues": [
+                "new",
+                "existing"
+            ],
+            "type": "string"
+        },
+        "networkInterfaceName": {
+            "defaultValue": "SDWAN-WO-VPX-Nic",
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Virtual Network Interface Card."
+            }
+        },
+        "networkSecurityGroupName": {
+            "defaultValue": "SDWAN-VPX-WO-Nsg",
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Network Security Group."
+            }
+        },
+        "diagnosticsStorageAccountName": {
+            "defaultValue": "[concat('vpxstracct', uniqueString(resourceGroup().id))]",
+            "type": "string",
+            "metadata": {
+                "description": "Name of the diagnostics Storage Account. If left empty, an auto-generated name will be used."
+            }
+        },
+        "addressPrefix": {
+            "defaultValue": "10.11.0.0/16",
+            "type": "string",
+            "metadata": {
+                "description": "Value of virtual network's Address range in CIDR form. Ignore this field if opting for existing Virtual Network."
+            }
+        },
+        "subnetName": {
+            "defaultValue": "default_subnet",
+            "type": "string",
+            "metadata": {
+                "description": "Name of subnet. ensure subnet exists in case of existing Virtual Network."
+            }
+        },
+        "subnetPrefix": {
+            "defaultValue": "10.11.0.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Value of default subnet address range in CIDR form. Ignore this field if opting for existing Virtual Network, Address prefix will be picked from existing Subnet."
+            }
+        }
+    },
+    "variables": {
+        "subnetRef": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('virtualMachineName')]",
+            "apiVersion": "2017-12-01",
+            "location": "[parameters('location')]",
+            "plan": {
+                "name": "citrixsd-wanopt",
+                "publisher": "citrix",
+                "product": "citrix-sd-wan-opt"
+            },
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "citrix",
+                        "offer": "citrix-sd-wan-opt",
+                        "sku": "citrixsd-wanopt",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                        }
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('diagnosticsStorageAccountName')), '2017-10-01').primaryEndpoints['blob']]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('virtualMachineName'), '-sdwanoptip')]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]"
+            ]
+        },
+        { 
+            "apiVersion": "2018-02-01",
+            "name": "pid-9d4241c3-fa92-5059-a952-1115a0ed3eb4",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
+            }
+          },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "Storage",
+            "name": "[parameters('diagnosticsStorageAccountName')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualNetworkName')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetPrefix')]"
+                        }
+                    }
+                ]
+            },
+            "condition": "[equals(parameters('vnetNewOrExisting'),'new')]"
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[parameters('networkInterfaceName')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "sdwanoptip",
+                        "properties": {
+                            "primary": true,
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('virtualMachineName'), '-sdwanoptip'))]"
+                            }
+                        }
+                    }
+                ],
+                "enableIPForwarding": true,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('virtualMachineName'), '-sdwanoptip')]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "sku": {
+                "name": "Basic"
+            },
+            "name": "[concat(parameters('virtualMachineName'), '-sdwanoptip')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('networkSecurityGroupName')]",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "ssh-rule",
+                        "properties": {
+                            "description": "Allow remote SSH",
+                            "priority": 1000,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "Internet",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22"
+                        }
+                    },
+                    {
+                        "name": "web-rule",
+                        "properties": {
+                            "description": "Allow WEB",
+                            "priority": 1001,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "Internet",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80"
+                        }
+                    },
+                    {
+                        "name": "secure-web-rule",
+                        "properties": {
+                            "description": "Allow Secure WEB",
+                            "priority": 1002,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "Internet",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "443"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "adminUsername": {
+            "type": "string",
+            "value": "[parameters('adminUsername')]"
+        }
+    }
+}

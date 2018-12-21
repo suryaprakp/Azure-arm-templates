@@ -1,0 +1,48 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "virtualMachineName": {
+            "value": "SDWAN-WO-VPX"
+        },
+        "adminUsername": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "adminPassword": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "virtualMachineSize": {
+            "value": "## TO BE DEFINED ##"
+        },
+        "virtualNetworkName": {
+            "value": "vnet01"
+        },
+        "vnetResourceGroup": {
+            "value": "[resourceGroup().name]"
+        },
+        "vnetNewOrExisting": {
+            "value": "new"
+        },
+        "networkInterfaceName": {
+            "value": "SDWAN-WO-VPX-Nic"
+        },
+        "networkSecurityGroupName": {
+            "value": "SDWAN-VPX-WO-Nsg"
+        },
+        "diagnosticsStorageAccountName": {
+            "value": "[concat('vpxstracct', uniqueString(resourceGroup().id))]"
+        },
+        "addressPrefix": {
+            "value": "10.11.0.0/16"
+        },
+        "subnetName": {
+            "value": "default_subnet"
+        },
+        "subnetPrefix": {
+            "value": "10.11.0.0/24"
+        }
+    }
+}
