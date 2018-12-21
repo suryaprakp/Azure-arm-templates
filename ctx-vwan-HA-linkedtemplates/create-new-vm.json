@@ -1,0 +1,162 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string"
+    },
+    "imageSKU": {
+      "type": "string"
+    },
+    "imagePublisher": {
+      "type": "string"
+    },
+    "imageOffer": {
+      "type": "string"
+    },
+    "availabilitySet": {
+      "type": "string"
+    },
+    "vmSize": {
+      "type": "string"
+    },
+    "OSDiskName": {
+      "type": "string"
+    },
+    "newStorageAccountName": {
+      "type": "string"
+    },
+    "vmUiName": {
+      "type": "string"
+    },
+    "vmName": {
+      "type": "string"
+    },
+    "adminUsername": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "string"
+    },
+    "subscriptionId": {
+      "type": "string"
+    },
+    "applicationId": {
+      "type": "string"
+    },
+    "applicationKey": {
+      "type": "string"
+    },
+    "directoryId": {
+      "type": "string"
+    },
+    "routeResourceId": {
+      "type": "string"
+    },
+    "routeName": {
+      "type": "string"
+    },
+    "routeTableName": {
+      "type": "string"
+    },
+    "routeAddressPrefix": {
+      "type": "string"
+    },
+    "privateIp": {
+      "type": "string"
+    },
+    "osDiskSize": {
+      "type": "int"
+    },
+    "nic0": {
+      "type": "string"
+    },
+    "nic1": {
+      "type": "string"
+    },
+    "nic2": {
+      "type": "string"
+    },
+    "nic3": {
+      "type": "string"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('vmUiName')]",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('Location')]",
+      "plan": {
+        "name": "[parameters('imageSKU')]",
+        "publisher": "[parameters('imagePublisher')]",
+        "product": "[parameters('imageOffer')]"
+      },
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets',parameters('availabilitySet'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computername": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('resourceid=', parameters('routeResourceId'), '\n', 'routetablename=', parameters('routeTableName'), '\n', 'routename=', parameters('routeName'), '\n', 'routePrefix=', parameters('routeAddressPrefix'), '\n', 'routeip=', parameters('privateIp'), '\n', 'subscriptionid=', parameters('subscriptionId'), '\n', 'applicationid=', parameters('applicationId'), '\n', 'applicationkey=', parameters('applicationKey'), '\n', 'directoryId=', parameters('directoryId'), '\n')) ]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[parameters('imagePublisher')]",
+            "offer": "[parameters('imageOffer')]",
+            "sku": "[parameters('imageSKU')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+                "storageAccountType": "Standard_LRS"
+            }
+          },
+          "dataDisks": []
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "properties": {
+                "primary": true
+              },
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic0'))]"
+            },
+            {
+              "properties": {
+                "primary": false
+              },
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic1'))]"
+            },
+            {
+              "properties": {
+                "primary": false
+              },
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic2'))]"
+            },
+            {
+              "properties": {
+                "primary": false
+              },
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nic3'))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+              "enabled": true,
+              "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('newStorageAccountName')), '2017-10-01').primaryEndpoints['blob']]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

@@ -1,0 +1,407 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Compute.MultiVm",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [],
+    "steps": [
+      {
+        "name": "infraConfig",
+        "label": "Administrator settings",
+        "subLabel": {
+          "preValidation": "Configure deployment settings",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Administrator settings",
+        "elements": [
+          {
+            "name": "Name",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Virtual Machine name",
+            "toolTip": "The name of the Virtual Machine.",
+            "constraints": {
+              "required": true,
+              "regex": "^[A-Za-z0-9]{1,15}$",
+              "validationMessage": "VM name must be alphanumeric and between 1 to 15 characters in length."
+            }
+          },
+          {
+            "name": "haDeployment",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "HA Deployment Mode",
+            "defaultValue": "Disabled",
+            "toolTip": "Enable or disable High availability deployments.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Enabled",
+                  "value": "VWanHA"
+                },
+                {
+                  "label": "Disabled",
+                  "value": "VWan"
+                }
+              ]
+            },
+            "visible": true
+          },
+          {
+            "name": "adminUsername",
+            "type": "Microsoft.Compute.UserNameTextBox",
+            "label": "Username",
+            "toolTip": "Admin username for the virtual machines.",
+            "osPlatform": "Linux",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "Credentials",
+            "type": "Microsoft.Compute.CredentialsCombo",
+            "label": {
+              "password": "Password",
+              "confirmPassword": "Confirm password"
+            },
+            "toolTip": {
+              "password": "Password for the Virtual Machine"
+            },
+            "constraints": {
+              "required": true
+            },
+            "options": {
+              "hideConfirmation": false
+            },
+            "osPlatform": "Windows"
+          }
+        ]
+      },
+      {
+        "name": "SDWANmyapplianceConfig",
+        "label": "SDWAN settings",
+        "subLabel": {
+          "preValidation": "Configure Netscaler SD-WAN appliance.",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "SDWAN settings",
+        "elements": [
+          {
+            "name": "Size",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Virtual machine size",
+            "toolTip": "The size of virtual machine to provision.",
+            "recommendedSizes": [
+              "Standard_D3_v2",
+              "Standard_D4_v2",
+                "Standard_F8",
+                "Standard_F16"
+            ],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_F8",
+                "Standard_F16"
+              ]
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "citrix",
+              "offer": "netscaler-sd-wan",
+              "sku": "netscalersd-wanstandardedition"
+            },
+            "count": "1"
+          },
+          {
+            "name": "osDiskSize",
+            "type": "Microsoft.Common.TextBox",
+            "label": "OS Disk Size(GB)",
+            "defaultValue": "40",
+            "toolTip": "Increase SDWAN OS Disk size to 250GB if deploying for scale.",
+            "constraints": {
+              "required": false,
+              "regex": "^(4[1-9]|[5-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0])$", 
+              "validationMessage": "Only numeric characters are allowed, and the value must be 1-3 characters long."
+            },
+            "visible": true
+          },
+          {
+            "name": "sdwanSKU",
+            "type": "Microsoft.Common.DropDown",
+            "label": "SD-WAN SKU",
+            "defaultValue": "netscalersd-wanstandardedition",
+            "toolTip": "Select appropriate SKU depending upon requirement like BYOL, 100Mbps ...",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "SD-WAN BYOL",
+                  "value": "netscalersd-wanstandardedition"
+                },
+                {
+                  "label": "SD-WAN 100Mbps",
+                  "value": "netscalersdwanstandardedition-100mbps"
+                },
+                {
+                  "label": "SD-WAN 200Mbps",
+                  "value": "netscalersdwanstandardedition-200mbps"
+                }
+              ]
+            },
+            "visible": true
+          },
+          {
+            "name": "storageAccount",
+            "type": "Microsoft.Storage.StorageAccountSelector",
+            "label": "Storage account",
+            "toolTip": "Storage Account for the Boot diagnostics of Virtual Machine", 
+            "defaultValue": {
+              "type": "Standard_LRS"
+            },
+            "constraints": {
+              "allowedTypes": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Standard_ZRS"
+              ]
+            }
+          },
+          {
+            "name": "MgmtpublicIpAddressVM1",
+            "type": "Microsoft.Network.PublicIpAddressCombo",
+            "label": {
+              "publicIpAddress": "Public IP address for management access of Primary Netscaler SD-WAN"
+            },
+            "toolTip": {
+              "publicIpAddress": "Public IP address for management access of Primary Netscaler SD-WAN"
+            },
+            "defaultValue": {
+              "publicIpAddressName": "nssdwan-primary-ip1"
+            },
+            "options": {
+              "hideNone": false,
+	      "hideDomainNameLabel": true
+            },
+            "constraints": {
+              "required": {
+                "domainNameLabel": false
+              }
+            }
+          },
+          {
+            "name": "MgmtpublicIpAddressVM2",
+            "type": "Microsoft.Network.PublicIpAddressCombo",
+            "label": {
+              "publicIpAddress": "Public IP address for management access of Secondary Netscaler SD-WAN"
+            },
+            "toolTip": {
+              "publicIpAddress": "Public IP address for management access of Secondary Netscaler SD-WAN"
+            },
+            "defaultValue": {
+              "publicIpAddressName": "nssdwan-secondary-ip1"
+            },
+            "options": {
+              "hideNone": false,
+	      "hideDomainNameLabel": true
+            },
+            "constraints": {
+              "required": {
+                "domainNameLabel": false
+              }
+            },
+            "visible": "[equals(steps('infraConfig').haDeployment, 'VWanHA')]"
+          },
+          {
+            "name": "MgmtpublicIpAddressVM3",
+            "type": "Microsoft.Network.PublicIpAddressCombo",
+            "label": {
+              "publicIpAddress": "Wan link public ip of Netscaler SD-WAN."
+            },
+            "toolTip": {
+              "publicIpAddress": "Wan link public ip of Netscaler SD-WAN."
+            },
+            "defaultValue": {
+              "publicIpAddressName": "nssdwan-vip-ip1"
+            },
+            "options": {
+              "hideNone": false,
+	      "hideDomainNameLabel": true
+            },
+            "constraints": {
+              "required": {
+                "domainNameLabel": false
+              }
+            }
+          },
+          {
+            "name": "virtualNetwork",
+            "type": "Microsoft.Network.VirtualNetworkCombo",
+            "label": {
+              "virtualNetwork": "Virtual network",
+              "subnets": "Subnets"
+            },
+            "toolTip": {
+              "virtualNetwork": "Virtual Network Name",
+              "subnets": "MGMT, LAN, WAN, AUX Subnets requied for deploying Netscaler SD-WAN High availability."
+            },
+            "defaultValue": {
+              "name": "vnet01",
+              "addressPrefixSize": "/16"
+            },
+            "constraints": {
+              "minAddressPrefixSize": "/24"
+            },
+            "subnets": {
+              "subnet1": {
+                "label": "Manangement subnet",
+                "constraints": {
+                  "minAddressPrefixSize": "/24",
+                  "minAddressCount": 1
+                }
+              },
+              "subnet2": {
+                "label": "LAN subnet",
+                "constraints": {
+                  "minAddressPrefixSize": "/24",
+                  "minAddressCount": 1
+                }
+              },
+              "subnet3": {
+                "label": "WAN subnet",
+                "constraints": {
+                  "minAddressPrefixSize": "/24",
+                  "minAddressCount": 1
+                }
+              },
+              "subnet4": {
+                "label": "AUX subnet",
+                "constraints": {
+                  "minAddressPrefixSize": "/24",
+                  "minAddressCount": 1
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "SDWANLanRouteSetting",
+        "label": "SDWAN Route settings",
+        "subLabel": {
+          "preValidation": "Configure the route settings",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "SDWAN Lan Route settings",
+        "elements": [
+          {
+            "name": "RouteName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Route table name",
+            "defaultValue": "SdWanHaRoute",
+            "toolTip": "The default route table for SD-WAN. This will route all traffic to the remote site(s) via SD-WAN Appliance.",
+            "constraints": {
+              "required": true,
+              "regex": "^[A-Za-z0-9]{1,15}$",
+              "validationMessage": "Only characters and digits are allowed with maximum length of 15."
+            },
+            "visible": true
+          },
+          {
+            "name": "RouteAddressPrefix",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Route Address Prefix",
+            "toolTip": "The address prefix to redirect all traffic through SD-WAN appliance.",
+            "constraints": {
+              "required": true,
+              "regex": "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\/\\d{1,2}$",
+              "validationMessage": "Only valid subnet prefixes are allowed."
+            },
+            "visible": true
+          },
+          {
+            "name": "ApplicationId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Application Id",
+            "defaultValue": "",
+            "toolTip": "Application id needed to update lan route at failover. This can be obtained from Azure Active Dir -> App registration -> <User created app> -> Application Id",
+            "constraints": {
+				"required": true,
+				"regex": "^[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}$",
+				"validationMessage": "Only alphanumeric characters are allowed as per Azure application id standard."
+            },
+            "visible": "[equals(steps('infraConfig').haDeployment, 'VWanHA')]"
+          },
+          {
+            "name": "ApplicationKey",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Application Key",
+            "defaultValue": "",
+            "toolTip": "Application key needed to update lan route at failover. This can be obtained from Azure Active Dir -> App registration -> <User created app> -> Keys -> VALUE",
+            "constraints": {
+				"required": true,
+				"regex": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+				"validationMessage": "Only alphanumeric characters are allowed as per Azure application key standard."
+            },
+            "visible": "[equals(steps('infraConfig').haDeployment, 'VWanHA')]"
+          },
+          {
+            "name": "DirectoryId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Directory Id",
+            "defaultValue": "",
+            "toolTip": "Directory Id needed to update lan route at failover. This can be obtained from Azure Active Dir -> Properties -> Directory ID.",
+            "constraints": {
+				"required": true,
+				"regex": "^[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}$",
+				"validationMessage": "Only alphanumeric characters are allowed as per Azure directory id standard."
+            },
+            "visible": "[equals(steps('infraConfig').haDeployment, 'VWanHA')]"
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "vmName": "[steps('infraConfig').Name]",
+      "applicationId": "[steps('SDWANLanRouteSetting').ApplicationId]",
+      "applicationKey": "[steps('SDWANLanRouteSetting').ApplicationKey]",
+      "directoryId": "[steps('SDWANLanRouteSetting').DirectoryId]",
+      "routeName": "[steps('SDWANLanRouteSetting').RouteName]",
+      "routeAddressPrefix": "[steps('SDWANLanRouteSetting').RouteAddressPrefix]",
+      "adminUsername": "[steps('infraConfig').adminUsername]",
+      "adminPassword": "[steps('infraConfig').Credentials.password]",
+      "vmSize": "[steps('SDWANmyapplianceConfig').Size]",
+      "osDiskSize": "[int(steps('SDWANmyapplianceConfig').osDiskSize)]",
+      "sdwanSKU": "[steps('SDWANmyapplianceConfig').sdwanSKU]",
+      "haMode": "[steps('infraConfig').haDeployment]",
+      "Location": "[location()]",
+      "newStorageAccountName": "[steps('SDWANmyapplianceConfig').storageAccount.name]",
+      "storageAccountType": "[steps('SDWANmyapplianceConfig').storageAccount.type]",
+      "storageAccountNewOrExisting": "[steps('SDWANmyapplianceConfig').storageAccount.newOrExisting]",
+      "storageAccountExistingRG": "[steps('SDWANmyapplianceConfig').storageAccount.resourceGroup]",
+      "MgmtpublicIPAddressName": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM1.name]",
+      "MgmtpublicIPNewOrExisting": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM1.newOrExistingOrNone]",
+      "MgmtpublicIPExistingRGName": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM1.resourceGroup]",
+      "MgmtpublicIPAddressName2": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM2.name]",
+      "MgmtpublicIPNewOrExisting2": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM2.newOrExistingOrNone]",
+      "MgmtpublicIPExistingRGName2": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM2.resourceGroup]",
+      "VIPpublicIPAddressName": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM3.name]",
+      "VIPpublicIPNewOrExisting": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM3.newOrExistingOrNone]",
+      "VIPpublicIPExistingRGName": "[steps('SDWANmyapplianceConfig').MgmtpublicIpAddressVM3.resourceGroup]",
+      "virtualNetworkName": "[steps('SDWANmyapplianceConfig').virtualNetwork.name]",
+      "virtualNetworkAddressPrefix": "[steps('SDWANmyapplianceConfig').virtualNetwork.addressPrefix]", 
+      "Subnet1Name": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet1.name]",
+      "Subnet1Prefix": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet1.addressPrefix]",
+      "Subnet2Name": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet2.name]",
+      "Subnet2Prefix": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet2.addressPrefix]",
+      "Subnet3Name": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet3.name]",
+      "Subnet3Prefix": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet3.addressPrefix]",
+      "Subnet4Name": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet4.name]",
+      "Subnet4Prefix": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet4.addressPrefix]",
+      "vnetNewOrExisting": "[steps('SDWANmyapplianceConfig').virtualNetwork.newOrExisting]",
+      "virtualNetworkExistingRGName": "[steps('SDWANmyapplianceConfig').virtualNetwork.resourceGroup]",
+      "subnet1StartAddress": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet1.startAddress]",
+      "subnet2StartAddress": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet2.startAddress]",
+      "subnet3StartAddress": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet3.startAddress]",
+      "subnet4StartAddress": "[steps('SDWANmyapplianceConfig').virtualNetwork.subnets.subnet4.startAddress]"
+    }
+  }
+}

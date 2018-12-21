@@ -1,0 +1,109 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "virtualNetworkAddressPrefix": {
+      "type": "string"
+    },
+    "Subnet1Name": {
+      "type": "string"
+    },
+    "Subnet1Prefix": {
+      "type": "string"
+    },
+    "Subnet2Name": {
+      "type": "string"
+    },
+    "Subnet2Prefix": {
+      "type": "string"
+    },
+    "Subnet3Name": {
+      "type": "string"
+    },
+    "Subnet3Prefix": {
+      "type": "string"
+    },
+    "Subnet4Name": {
+      "type": "string"
+    },
+    "Subnet4Prefix": {
+      "type": "string"
+    },
+    "vnetExistingRGName" : {
+      "type" : "string",
+      "defaultValue" : ""
+    }
+  },
+  "variables" : {
+    "vnetID" : "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+    "subnet1" : "[concat(variables('vnetID'),'/subnets/',parameters('Subnet1Name'))]",
+    "subnet2" : "[concat(variables('vnetID'),'/subnets/',parameters('Subnet2Name'))]",
+    "subnet3" : "[concat(variables('vnetID'),'/subnets/',parameters('Subnet3Name'))]",
+    "subnet4" : "[concat(variables('vnetID'),'/subnets/',parameters('Subnet4Name'))]"
+  },
+  "resources": [
+        {
+            "apiVersion": "2018-07-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualNetworkName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('virtualNetworkAddressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('Subnet1Name')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Subnet1Prefix')]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('Subnet2Name')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Subnet2Prefix')]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('Subnet3Name')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Subnet3Prefix')]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('Subnet4Name')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Subnet4Prefix')]"
+                        }
+                    }
+                ]
+            }
+        }
+  ],
+  "outputs": {
+    "subnet1Ref": {
+      "value": "[variables('subnet1')]",
+      "type": "string"
+    },
+    "subnet2Ref": {
+      "value": "[variables('subnet2')]",
+      "type": "string"
+    },
+    "subnet3Ref": {
+      "value": "[variables('subnet3')]",
+      "type": "string"
+    },
+    "subnet4Ref": {
+      "value": "[variables('subnet4')]",
+      "type": "string"
+    }
+  }
+}

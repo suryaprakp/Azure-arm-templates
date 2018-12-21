@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string"
+    },
+    "VIPpublicIpAddressName": {
+      "type": "string"
+    },
+    "VIPpublicIPAddressType": {
+      "type": "string"
+    },
+    "VIPpublicIpRGName": {
+      "type": "string",
+      "defaultValue" : ""
+    },
+    "VIPpublicIPNewOrExisting" : {
+      "type" : "string",
+      "defaultValue" : ""
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[parameters('VIPpublicIpAddressName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[parameters('VIPpublicIPAddressType')]"
+      }
+    }
+  ],
+  "outputs": {
+    "publicIpId": {
+      "value": "[resourceId(concat('Microsoft.Network','/','publicIPAddresses'),parameters('VIPpublicIPAddressName'))]",
+      "type": "string"
+    }
+  }
+}

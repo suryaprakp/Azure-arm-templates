@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string"
+    },
+    "MgmtpublicIpAddressName": {
+      "type": "string"
+    },
+    "MgmtpublicIPAddressType": {
+      "type": "string"
+    },
+    "MgmtpublicIpRGName": {
+      "type": "string",
+      "defaultValue" : ""
+    },
+    "MgmtpublicIPNewOrExisting" : {
+      "type" : "string",
+      "defaultValue" : ""
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[parameters('MgmtpublicIpAddressName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[parameters('MgmtpublicIPAddressType')]"
+      }
+    }
+  ],
+  "outputs": {
+    "publicIpId": {
+      "value": "[resourceId(concat('Microsoft.Network','/','publicIPAddresses'),parameters('MgmtpublicIPAddressName'))]",
+      "type": "string"
+    }
+  }
+}

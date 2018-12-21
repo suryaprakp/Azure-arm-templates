@@ -1,0 +1,1319 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": "Virtual_Network",
+      "metadata": {
+        "description": "VNet name"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "virtualNetworkExistingRGName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Existing Virtual Network name."
+      }
+    },
+    "virtualNetworkAddressPrefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Virtual Network Address prefix"
+      }
+    },
+    "vnetNewOrExisting": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Identifies whether to use new or existing Virtual Network"
+      }
+    },
+    "Subnet1Prefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Manangement Subnet Prefix"
+      }
+    },
+    "Subnet1Name": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Management Subnet Name"
+      }
+    },
+    "subnet1StartAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Manangement Subnet Starting IP Address"
+      }
+    },
+    "Subnet2Prefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "LAN Subnet Prefix"
+      }
+    },
+    "Subnet2Name": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "LAN Subnet Name"
+      }
+    },
+    "subnet2StartAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "LAN Subnet Starting IP Address"
+      }
+    },
+    "Subnet3Prefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "WAN Subnet Prefix"
+      }
+    },
+    "Subnet3Name": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "WAN Subnet Name"
+      }
+    },
+    "subnet3StartAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "WAN Subnet Starting IP Address"
+      }
+    },
+    "subnet4StartAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "AUX Subnet Starting IP Address"
+      }
+    },
+    "Subnet4Prefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "AUX Subnet Prefix"
+      }
+    },
+    "Subnet4Name": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "AUX Subnet Name"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Username for the Virtual Machine."
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Password for the Virtual Machine."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "myappliance",
+      "metadata": {
+        "description": "Name for the Virtual Machine."
+      }
+    },
+    "osDiskSize": {
+      "type": "int",
+      "defaultValue": 40,
+      "metadata": {
+        "description": "Virtual Machine OS Disk Size. For scaling multiple sites increase it to 250 GB."
+      }
+    },
+    "applicationId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SDWAN application ID."
+      }
+    },
+    "applicationKey": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SDWAN application key."
+      }
+    },
+    "directoryId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SDWAN Directory ID."
+      }
+    },
+    "routeTableName": {
+      "type": "string",
+      "defaultValue": "SdWanRouteTable",
+      "metadata": {
+        "description": "SDWAN route table."
+      }
+    },
+    "routeName": {
+      "type": "string",
+      "defaultValue": "SdWanRoute",
+      "metadata": {
+        "description": "SDWAN route name."
+      }
+    },
+    "routeAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "SDWAN route address prefix."
+      }
+    },
+    "haMode": {
+      "type": "string",
+      "defaultValue": "VWan",
+      "metadata": {
+        "description": "Deployment mode for HA."
+      }
+    },
+    "sdwanSKU": {
+      "type": "string",
+      "defaultValue": "netscalersd-wanstandardedition",
+      "metadata": {
+        "description": "Virtual Machine SKU."
+      }
+    },
+    "newStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Unique Name for Storage Account where the Virtual Machine's disks will be placed."
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "metadata": {
+        "description": "The type of storage account created."
+      }
+    },
+    "storageAccountNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Identifies whether to use new or existing Storage Account"
+      }
+    },
+    "storageAccountExistingRG": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource Group containing existing storage account"
+      }
+    },
+    "MgmtpublicIPAddressName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Managemnet Public IP Address."
+      }
+    },
+    "MgmtpublicIPNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Indicates whether the Public IP is new or existing"
+      }
+    },
+    "MgmtpublicIPExistingRGName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource Group containing existing public IP"
+      }
+    },
+    "MgmtpublicIPAddressName2": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Managemnet Public IP Address for secondary appliance."
+      }
+    },
+    "MgmtpublicIPNewOrExisting2": {
+      "type": "string",
+      "defaultValue": "existing",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Indicates whether the Public IP is new or existing"
+      }
+    },
+    "MgmtpublicIPExistingRGName2": {
+      "type": "string",
+      "defaultValue": "newrgappliance2",
+      "metadata": {
+        "description": "Resource Group containing existing public IP"
+      }
+    },
+    "VIPpublicIPAddressName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the WAN facing Public IP Address."
+      }
+    },
+    "VIPpublicIPNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Indicates whether the Public IP is new or existing"
+      }
+    },
+    "VIPpublicIPExistingRGName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource Group containing existing public IP"
+      }
+    },
+    "baseUrl": {
+      "type": "string",
+      "metadata": {
+        "artifactsBaseUrl": "",
+        "description": "URL to acquire other templates"
+      },
+      "defaultValue": "https://raw.githubusercontent.com/ujjwalKSingh/sdwan-template/master"
+    },
+    "vmSize": {
+      "type": "string",
+      "metadata": {
+        "description": "Size of the Virtual Machine"
+      }
+    },
+    "imageQualifier": {
+      "defaultValue": "",
+      "allowedValues": [
+        "",
+        "-preview"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Specifies an additional qualifier to use for Marketplace image references. The value 'preview' is for images in staging, while the default value references production images."
+      }
+    }
+  },
+  "variables": {
+    "imagePublisher": "citrix",
+    "imageOffer": "[concat('netscaler-sd-wan', parameters('imageQualifier'))]",
+    "imageSKU": "[parameters('sdwanSKU')]",
+    "OSDiskName": "[concat(parameters('vmName'),uniquestring(resourceGroup().id),'-disk')]",
+    "OSDiskName2": "[concat(parameters('vmName'),uniquestring(resourceGroup().id),'secondary','-disk')]",
+    "vmStorageAccountContainerName": "vhds",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+    "availabilitySet": "[concat(parameters('vmName'),'-avset')]",
+    "subnet1Ref": "[concat(variables('vnetID'),'/subnets/', parameters('Subnet1Name'))]",
+    "subnet2Ref": "[concat(variables('vnetID'),'/subnets/', parameters('Subnet2Name'))]",
+    "subnet3Ref": "[concat(variables('vnetID'),'/subnets/', parameters('Subnet3Name'))]",
+    "subnet4Ref": "[concat(variables('vnetID'),'/subnets/', parameters('Subnet4Name'))]",
+    "nsgname": "[concat(parameters('vmName'),'-SecurityGroup')]",
+    "apiVer": "2015-06-15",
+    "publicIPAddressType": "Static",
+    "storageAccountSetupURL": "[concat(parameters('baseUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]",
+    "loadBalancerSetupURL": "[concat(parameters('baseUrl'),'/loadbalancer.json')]",
+    "createVmURL": "[concat(parameters('baseUrl'),'/create-new-vm.json')]",
+    "updateNicSetupURL": "[concat(parameters('baseUrl'),'/update-nic.json')]",
+    "updatePubNicSetupURL": "[concat(parameters('baseUrl'),'/update-nic-public.json')]",
+    "MgmtpublicIPSetupURL": "[concat(parameters('baseUrl'),'/mgmtpublicip-',parameters('MgmtpublicIPNewOrExisting'),'.json')]",
+    "VIPpublicIPSetupURL": "[concat(parameters('baseUrl'),'/vippublicip-',parameters('VIPpublicIPNewOrExisting'),'.json')]",
+    "virtualNetworkSetupURL": "[concat(parameters('baseUrl'),'/vnet-',parameters('vnetNewOrExisting'),'.json')]",
+    "updateRouteSubnetSetupURL": "[concat(parameters('baseUrl'),'/update-subnet.json')]",
+    "osProfile": "[variables(concat('osProfile', 'password'))]",
+    "osProfilepassword": {
+      "computername": "[parameters('vmName')]",
+      "adminUsername": "[parameters('adminUsername')]",
+      "adminPassword": "[parameters('adminPassword')]",
+      "customData": "[base64(concat('applicationid=', parameters('applicationId'), '\n', 'applicationkey=', parameters('applicationKey'), '\n', 'directoryId=', parameters('directoryId'), '\n')) ]"
+    }
+  },
+  "resources": [
+    {
+      "name": "SettingUpStorageAccount",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-05-10",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('storageAccountSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "storageAccountType": {
+            "value": "[parameters('storageAccountType')]"
+          },
+          "storageAccountName": {
+            "value": "[parameters('newStorageAccountName')]"
+          },
+          "storageAccountExistingRG": {
+            "value": "[parameters('storageAccountExistingRG')]"
+          }
+        }
+      }
+    },
+    { 
+      "apiVersion": "2018-02-01",
+      "name": "pid-3407d6d6-0461-5206-9470-af98f521a448",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "resources": []
+          }
+      }
+    },
+    {
+      "type": "Microsoft.Network/routeTables",
+      "apiVersion": "2018-07-01",
+      "name": "[parameters('routeTableName')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpMgmtPublicIP')]",
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic1VWan')]"
+      ],
+      "location": "[parameters('location')]",
+      "properties": {
+        "routes": [
+          {
+            "name": "[parameters('routeName')]",
+            "properties": {
+              "addressPrefix": "[parameters('routeAddressPrefix')]",
+              "nextHopType": "VirtualAppliance",
+              "nextHopIpAddress": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic1VWan')).ipConfigurations[0].properties.privateIPAddress]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SettingUpLoadbalancer",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2018-07-01",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'updateip3')]",
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic2VWan')]",
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVIPPublicIP')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('loadBalancerSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('vmName'),'-Nic2VWan')]"
+          },
+          "SubnetRef": {
+            "value": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet3Ref.value]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic2VWan')).ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "nicName2": {
+            "value": "[concat(parameters('vmName'),'-Nic2VWanHA')]"
+          },
+          "privateIp2": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic2', parameters('haMode'))).ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "publicIPId": {
+            "value": "[resourceId('Microsoft.Network/publicIPAddresses',parameters('VIPpublicIPAddressName'))]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[variables('availabilitySet')]",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+      "sku": {
+				"name": "Aligned"
+			},
+      "properties": {
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 2
+      }
+    },
+    {
+      "name": "SettingUpMgmtPublicIP",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-05-10",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('MgmtpublicIPSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "MgmtpublicIPAddressName": {
+            "value": "[parameters('MgmtpublicIPAddressName')]"
+          },
+          "MgmtpublicIPAddressType": {
+            "value": "[variables('publicIPAddressType')]"
+          },
+          "MgmtpublicIPNewOrExisting": {
+            "value": "[parameters('MgmtpublicIPNewOrExisting')]"
+          },
+          "MgmtpublicIpRGName": {
+            "value": "[parameters('MgmtpublicIPExistingRGName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "SettingUpMgmtPublicIP2",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpMgmtPublicIP')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('MgmtpublicIPSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "MgmtpublicIPAddressName": {
+            "value": "[parameters('MgmtpublicIPAddressName2')]"
+          },
+          "MgmtpublicIPAddressType": {
+            "value": "[variables('publicIPAddressType')]"
+          },
+          "MgmtpublicIPNewOrExisting": {
+            "value": "[parameters('MgmtpublicIPNewOrExisting2')]"
+          },
+          "MgmtpublicIpRGName": {
+            "value": "[parameters('MgmtpublicIPExistingRGName2')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "SettingUpVIPPublicIP",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpMgmtPublicIP2')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('VIPpublicIPSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "VIPpublicIPAddressName": {
+            "value": "[parameters('VIPpublicIPAddressName')]"
+          },
+          "VIPpublicIPAddressType": {
+            "value": "[variables('publicIPAddressType')]"
+          },
+          "VIPpublicIPNewOrExisting": {
+            "value": "[parameters('VIPpublicIPNewOrExisting')]"
+          },
+          "VIPpublicIpRGName": {
+            "value": "[parameters('VIPpublicIPExistingRGName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('vmName'),'-SecurityGroup')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "UDP-Rule1",
+            "properties": {
+              "description": "Allow UDP",
+              "protocol": "Udp",
+              "sourcePortRange": "4980",
+              "destinationPortRange": "4980",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 101,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "UDP-Rule2",
+            "properties": {
+              "description": "Allow UDP",
+              "protocol": "Udp",
+              "sourcePortRange": "4980",
+              "destinationPortRange": "4980",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 102,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "TCP-Rule",
+            "properties": {
+              "description": "Allow TCP",
+              "protocol": "Tcp",
+              "sourcePortRange": "22",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 103,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "TCP-Rule-1",
+            "properties": {
+              "description": "Allow TCP",
+              "protocol": "Tcp",
+              "sourcePortRange": "443",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 104,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "TCP-Rule-2",
+            "properties": {
+              "description": "Allow TCP",
+              "protocol": "Tcp",
+              "sourcePortRange": "80",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 105,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      },
+      "type": "Microsoft.Network/networkSecurityGroups"
+    },
+    {
+      "name": "SettingUpVirtualNetwork",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-05-10",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('virtualNetworkSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "virtualNetworkName": {
+            "value": "[parameters('virtualNetworkName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "virtualNetworkAddressPrefix": {
+            "value": "[parameters('virtualNetworkAddressPrefix')]"
+          },
+          "Subnet1Name": {
+            "value": "[parameters('Subnet1Name')]"
+          },
+          "Subnet1Prefix": {
+            "value": "[parameters('Subnet1Prefix')]"
+          },
+          "Subnet2Name": {
+            "value": "[parameters('Subnet2Name')]"
+          },
+          "Subnet2Prefix": {
+            "value": "[parameters('Subnet2Prefix')]"
+          },
+          "Subnet3Name": {
+            "value": "[parameters('Subnet3Name')]"
+          },
+          "Subnet3Prefix": {
+            "value": "[parameters('Subnet3Prefix')]"
+          },
+          "Subnet4Name": {
+            "value": "[parameters('Subnet4Name')]"
+          },
+          "Subnet4Prefix": {
+            "value": "[parameters('Subnet4Prefix')]"
+          },
+          "vnetExistingRGName": {
+            "value": "[parameters('virtualNetworkExistingRGName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic0VWan')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]",
+        "[concat('Microsoft.Network/networkSecurityGroups/',variables('nsgname'))]",
+        "[concat('Microsoft.Resources/deployments/','SettingUpMgmtPublicIP')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('subnet1StartAddress')]",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet1Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',parameters('MgmtpublicIPAddressName'))]"
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic1VWan')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('subnet2StartAddress')]",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet2Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic2VWan')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('subnet3StartAddress')]",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet3Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic3VWan')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAlLocationMethod": "Static",
+              "privateIPAddress": "[parameters('subnet4StartAddress')]",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2015-01-01').outputs.subnet4Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "name": "[concat(parameters('vmName'),'-Nic0VWanHA')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]",
+        "[concat('Microsoft.Resources/deployments/','SettingUpMgmtPublicIP2')]",
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic0VWan')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet1Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic1VWanHA')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]",
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic1VWan')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet2Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic2VWanHA')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]",
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic2VWan')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet3Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "apiVersion": "2018-07-01",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmName'),'-Nic3VWanHA')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVirtualNetwork')]",
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic3VWan')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet4Ref.value]",
+                "properties": {
+                  "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgname'))]"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "condition": "[equals(parameters('haMode'), 'VWan')]",
+      "name": "updateip0",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic2VWan')]",
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpVIPPublicIP')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updatePubNicSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('vmName'),'-Nic2VWan')]"
+          },
+          "nsgname": {
+            "value": "[variables('nsgname')]"
+          },
+          "SubnetRef": {
+            "value": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet3Ref.value]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic2VWan'),  '2016-03-30').ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "publicIPId": {
+            "value": "[resourceId('Microsoft.Network/publicIPAddresses',parameters('VIPpublicIPAddressName'))]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "name": "updateip1",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic0VWanHA')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updatePubNicSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('vmName'),'-Nic0VWanHA')]"
+          },
+          "nsgname": {
+            "value": "[variables('nsgname')]"
+          },
+          "SubnetRef": {
+            "value": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet1Ref.value]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic0', parameters('haMode')),  '2016-03-30').ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "publicIPId": {
+            "value": "[resourceId('Microsoft.Network/publicIPAddresses',parameters('MgmtpublicIPAddressName2'))]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "name": "[concat('updateip2')]",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic1VWanHA')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updateNicSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('vmName'),'-Nic1VWanHA')]"
+          },
+          "nsgname": {
+            "value": "[variables('nsgname')]"
+          },
+          "SubnetRef": {
+            "value": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet2Ref.value]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic1', parameters('haMode')),  '2016-03-30').ipConfigurations[0].properties.privateIPAddress]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "name": "updateip3",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic2VWanHA')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updateNicSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('vmName'),'-Nic2VWanHA')]"
+          },
+          "nsgname": {
+            "value": "[variables('nsgname')]"
+          },
+          "SubnetRef": {
+            "value": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet3Ref.value]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic2', parameters('haMode')),  '2016-03-30').ipConfigurations[0].properties.privateIPAddress]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "name": "updateip4",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmName'), '-Nic3VWanHA')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updateNicSetupURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('vmName'),'-Nic3VWanHA')]"
+          },
+          "nsgname": {
+            "value": "[variables('nsgname')]"
+          },
+          "SubnetRef": {
+            "value": "[reference('Microsoft.Resources/deployments/SettingUpVirtualNetwork', '2018-06-01').outputs.subnet4Ref.value]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic3', parameters('haMode')),  '2016-03-30').ipConfigurations[0].properties.privateIPAddress]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "cbvw",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpStorageAccount')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic0VWan')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic1VWan')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic2VWan')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic3VWan')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('createVmURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "imageSKU": {
+            "value": "[variables('imageSKU')]"
+          },
+          "imagePublisher": {
+            "value": "[variables('imagePublisher')]"
+          },
+          "imageOffer": {
+            "value": "[variables('imageOffer')]"
+          },
+          "availabilitySet": {
+            "value": "[variables('availabilitySet')]"
+          },
+          "vmSize": {
+            "value": "[parameters('vmSize')]"
+          },
+          "OSDiskName": {
+            "value": "[variables('OSDiskName')]"
+          },
+          "newStorageAccountName": {
+            "value": "[parameters('newStorageAccountName')]"
+          },
+          "vmUiName": {
+            "value": "[parameters('vmName')]"
+          },
+          "vmName": {
+            "value": "[parameters('vmName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "applicationId": {
+            "value": "[parameters('applicationId')]"
+          },
+          "applicationKey": {
+            "value": "[parameters('applicationKey')]"
+          },
+          "subscriptionId": {
+            "value": "[subscription().subscriptionId]"
+          },
+          "directoryId": {
+            "value": "[parameters('directoryId')]"
+          },
+          "routeResourceId": {
+            "value": "[resourceGroup().name]"
+          },
+          "routeName": {
+            "value": "[parameters('routeName')]"
+          },
+          "osDiskSize": {
+            "value": "[parameters('osDiskSize')]"
+          },
+          "routeTableName": {
+            "value": "[parameters('routeTableName')]"
+          },
+          "routeAddressPrefix": {
+            "value": "[parameters('routeAddressPrefix')]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic1VWan')).ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "nic0": {
+            "value": "[concat(parameters('vmName'), '-Nic0VWan')]"
+          },
+          "nic1": {
+            "value": "[concat(parameters('vmName'), '-Nic1VWan')]"
+          },
+          "nic2": {
+            "value": "[concat(parameters('vmName'), '-Nic2VWan')]"
+          },
+          "nic3": {
+            "value": "[concat(parameters('vmName'), '-Nic3VWan')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "condition": "[equals(parameters('haMode'), 'VWanHA')]",
+      "name": "cbvw2",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpStorageAccount')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic0VWanHA')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic1VWanHA')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic2VWanHA')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('vmName'),'-Nic3VWanHA')]",
+        "[concat('Microsoft.Resources/deployments/', 'updateip3')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('createVmURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "imageSKU": {
+            "value": "[variables('imageSKU')]"
+          },
+          "imagePublisher": {
+            "value": "[variables('imagePublisher')]"
+          },
+          "imageOffer": {
+            "value": "[variables('imageOffer')]"
+          },
+          "availabilitySet": {
+            "value": "[variables('availabilitySet')]"
+          },
+          "vmSize": {
+            "value": "[parameters('vmSize')]"
+          },
+          "OSDiskName": {
+            "value": "[variables('OSDiskName2')]"
+          },
+          "newStorageAccountName": {
+            "value": "[parameters('newStorageAccountName')]"
+          },
+          "vmUiName": {
+            "value": "[concat(parameters('vmName'), 'Sec')]"
+          },
+          "vmName": {
+            "value": "[parameters('vmName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "applicationId": {
+            "value": "[parameters('applicationId')]"
+          },
+          "applicationKey": {
+            "value": "[parameters('applicationKey')]"
+          },
+          "subscriptionId": {
+            "value": "[subscription().subscriptionId]"
+          },
+          "directoryId": {
+            "value": "[parameters('directoryId')]"
+          },
+          "routeResourceId": {
+            "value": "[resourceGroup().name]"
+          },
+          "routeName": {
+            "value": "[parameters('routeName')]"
+          },
+          "osDiskSize": {
+            "value": "[parameters('osDiskSize')]"
+          },
+          "routeTableName": {
+            "value": "[parameters('routeTableName')]"
+          },
+          "routeAddressPrefix": {
+            "value": "[parameters('routeAddressPrefix')]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', parameters('vmName'),'-Nic1', parameters('haMode'))).ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "nic0": {
+            "value": "[concat(parameters('vmName'), '-Nic0VWanHA')]"
+          },
+          "nic1": {
+            "value": "[concat(parameters('vmName'), '-Nic1VWanHA')]"
+          },
+          "nic2": {
+            "value": "[concat(parameters('vmName'), '-Nic2VWanHA')]"
+          },
+          "nic3": {
+            "value": "[concat(parameters('vmName'), '-Nic3VWanHA')]"
+          }
+        }
+      }
+    }
+  ]
+}
