@@ -1,4 +1,4 @@
-This template deploys Citrix SD-WAN virtual machines in a highly available mode.This template deploys following things 
+This template deploys Citrix SD-WAN virtual machines in a highly available/ Stand alone mode.This template deploys following things 
 
 1) Its a conditional template taking care of both HA as well as normal deployment
 2) In case of HA , This template creates 
