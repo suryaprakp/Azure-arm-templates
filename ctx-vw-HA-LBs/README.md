@@ -6,14 +6,16 @@ In case of HA mode, This template creates:
 - Availability set for HA 
 - External LB ( Standard SKU ) - WAN endpoint to the internet
 - Internal LB ( Standard SKU ) - LAN gateway internal to VNET
-- SKU specific VM including per hour licensing
+- Ip Forwarding enabled to intercept packets not destined to adapter
 - VM's with managed disks
+- SKU specific VM including per hour licensing
 - Security groups associated with adapters depending on the traffic patterns
 
 In case of Standalone mode, This template creates:
 - 1 SD-WAN vm with 3 subnet for management,LAN,WAN
 - UI associated with Azure portal ( createUidefinition )
 - VM with managed disk
-- SKU specific VM including per hour licensing
 - Gateway deployment in VNET
+- Ip Forwarding enabled to intercept packets not destined to adapter
+- SKU specific VM including per hour licensing
 - Security groups associated with adapters depending on the traffic patterns
