@@ -1,7 +1,10 @@
 This template deploys Citrix SD-WAN virtual machines in a highly available/ Stand alone mode.This template deploys following things 
-
-1) Its a conditional template taking care of both HA as well as normal deployment
-2) In case of HA , This template creates 
+<ul>
+<li>Its a conditional template taking care of both HA as well as normal deployment</li>
+<li>In case of HA , This template creates</li>
+<li>In case of standalone deployment, This template creates</li>
+</ul>
+   
    a) 2 SD-WAN vm's with 4 subnets for management,LAN,WAN,AUX
    b) UI associated with Azure portal ( createUidefinition )
    c) Availability set for HA 
@@ -10,7 +13,10 @@ This template deploys Citrix SD-WAN virtual machines in a highly available/ Stan
    f) SKU specific VM including per hour licensing
    g) VM's with managed disks
    h) Security groups associated with adapters depending on the traffic patterns
-3) In case of standalone deployment, This template creates
+
+ 
+   
+
    a) 1 SD-WAN vm with 3 subnet for management,LAN,WAN
    b) UI associated with Azure portal ( createUidefinition )
    c) VM with managed disk
